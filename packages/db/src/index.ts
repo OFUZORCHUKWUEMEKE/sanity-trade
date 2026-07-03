@@ -11,6 +11,7 @@ import type {
 
 export * from "./collections.js";
 export * from "./indexes.js";
+export type { Db, MongoClient } from "mongodb";
 
 export function createDbClient(connectionString: string): { client: MongoClient; db: Db } {
   const client = new MongoClient(connectionString);

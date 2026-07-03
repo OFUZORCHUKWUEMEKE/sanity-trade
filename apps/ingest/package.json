@@ -14,14 +14,17 @@
     "@memebot/core": "workspace:*",
     "@memebot/db": "workspace:*",
     "dotenv": "^16.4.7",
+    "ioredis": "^5.11.1",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
+    "ws": "^8.21.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.8",
-    "@types/node": "^22.10.5"
+    "vitest": "^2.1.8"
   }
 }
