@@ -6,6 +6,7 @@ import {
   scoreMintAuthority,
   scoreRugCheck,
   type CheckResult,
+  type ScorePipelineResult,
 } from "@memebot/core";
 import { tokenScoresCollection, type Db } from "@memebot/db";
 import type { Connection } from "@solana/web3.js";
@@ -36,7 +37,11 @@ function unavailableCheck(check: string, err: unknown): CheckResult {
   };
 }
 
-export async function scoreToken(deps: ScorerDeps, mint: string, deployer: string): Promise<void> {
+export async function scoreToken(
+  deps: ScorerDeps,
+  mint: string,
+  deployer: string,
+): Promise<ScorePipelineResult> {
   const now = new Date();
   const checks: CheckResult[] = [];
 
@@ -91,4 +96,6 @@ export async function scoreToken(deps: ScorerDeps, mint: string, deployer: strin
     { mint, total: result.total, hardRejected: result.hardRejected },
     "scored token",
   );
+
+  return result;
 }

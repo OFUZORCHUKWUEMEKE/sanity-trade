@@ -16,6 +16,19 @@ const envSchema = z.object({
   RATE_LIMIT_DELAY_MS: z.coerce.number().int().nonnegative().default(250),
   SCORE_T60_MS: z.coerce.number().int().positive().default(60_000),
   SCORE_T5MIN_MS: z.coerce.number().int().positive().default(300_000),
+
+  // Paper trader / risk rules (CLAUDE.md: max 0.1 SOL position, max 3
+  // concurrent, non-negotiable defaults - override only with intent).
+  ENTRY_SCORE_THRESHOLD: z.coerce.number().min(0).max(100).default(70),
+  POSITION_SIZE_SOL: z.coerce.number().positive().default(0.1),
+  MAX_CONCURRENT_POSITIONS: z.coerce.number().int().positive().default(3),
+  TAKE_PROFIT_MULTIPLE: z.coerce.number().positive().default(2),
+  TAKE_PROFIT_SELL_FRACTION: z.coerce.number().min(0).max(1).default(0.5),
+  TRAILING_STOP_PERCENT: z.coerce.number().min(0).max(1).default(0.2),
+  MARKET_CAP_COLLAPSE_DRAWDOWN: z.coerce.number().min(0).max(1).default(0.6),
+  PLATFORM_FEE_BPS: z.coerce.number().int().nonnegative().default(125),
+  SLIPPAGE_BPS: z.coerce.number().int().nonnegative().default(100),
+  PRIORITY_FEE_SOL: z.coerce.number().nonnegative().default(0.0005),
 });
 
 export type Config = z.infer<typeof envSchema>;

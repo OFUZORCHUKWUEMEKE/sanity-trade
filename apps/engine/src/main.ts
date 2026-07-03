@@ -6,6 +6,7 @@ import { createLogger } from "./logger.js";
 import { createHealthServer } from "./server.js";
 import { incrementDeployerTokenCount } from "./deployer-repo.js";
 import { MintStatsTracker } from "./mint-stats.js";
+import { PaperTrader } from "./paper-trader.js";
 import { scheduleRescoring } from "./scheduler.js";
 import { scoreToken } from "./scorer.js";
 import { createSolanaConnection } from "./solana-rpc.js";
@@ -32,10 +33,45 @@ const scorerDeps = {
   rugCheckBaseUrl: config.RUGCHECK_BASE_URL,
 };
 
+// PAPER_MODE gates the trader: Phase 1 has no real execution path at all,
+// so if it's ever set to false there's simply nothing to run yet.
+const paperTrader = config.PAPER_MODE
+  ? new PaperTrader({
+      db,
+      logger,
+      positionSizeSol: config.POSITION_SIZE_SOL,
+      maxConcurrent: config.MAX_CONCURRENT_POSITIONS,
+      entryScoreThreshold: config.ENTRY_SCORE_THRESHOLD,
+      takeProfitMultiple: config.TAKE_PROFIT_MULTIPLE,
+      takeProfitSellFraction: config.TAKE_PROFIT_SELL_FRACTION,
+      trailingStopPercent: config.TRAILING_STOP_PERCENT,
+      marketCapCollapseDrawdown: config.MARKET_CAP_COLLAPSE_DRAWDOWN,
+      platformFeeBps: config.PLATFORM_FEE_BPS,
+      slippageBps: config.SLIPPAGE_BPS,
+      priorityFeeSol: config.PRIORITY_FEE_SOL,
+    })
+  : undefined;
+
+if (!paperTrader) {
+  logger.warn("PAPER_MODE is false; Phase 1 has no real execution path, so no trades will be taken");
+}
+
 function runScoring(mint: string, deployer: string): void {
-  scoreToken(scorerDeps, mint, deployer).catch((err: unknown) => {
-    logger.error({ err, mint }, "scoring pass failed");
-  });
+  scoreToken(scorerDeps, mint, deployer)
+    .then((result) => {
+      const stats = mintStats.get(mint);
+      paperTrader?.tryEnter(
+        mint,
+        deployer,
+        result.total,
+        result.hardRejected,
+        stats?.latestPriceSol,
+        stats?.marketCapSol,
+      );
+    })
+    .catch((err: unknown) => {
+      logger.error({ err, mint }, "scoring pass failed");
+    });
 }
 
 const consumer = new StreamConsumer(redis, config.REDIS_EVENTS_STREAM, (event) => {
@@ -46,6 +82,8 @@ const consumer = new StreamConsumer(redis, config.REDIS_EVENTS_STREAM, (event) =
       logger.error({ err, deployer: event.deployer }, "failed to increment deployer token count");
     });
     scheduleRescoring(event.mint, event.deployer, [config.SCORE_T60_MS, config.SCORE_T5MIN_MS], runScoring);
+  } else {
+    paperTrader?.onTrade(event);
   }
 }, logger);
 

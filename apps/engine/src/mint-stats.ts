@@ -5,9 +5,11 @@ export const GRADUATION_MARKET_CAP_SOL = 85;
 
 export interface MintStats {
   mint: string;
+  deployer: string | undefined;
   launchedAt: Date;
   uniqueBuyers: Set<string>;
   marketCapSol: number;
+  latestPriceSol: number | undefined;
 }
 
 export class MintStatsTracker {
@@ -15,12 +17,17 @@ export class MintStatsTracker {
 
   onEvent(event: NormalizedEvent): void {
     if (event.eventType === "TokenLaunched") {
-      if (!this.stats.has(event.mint)) {
+      const existing = this.stats.get(event.mint);
+      if (existing) {
+        existing.deployer = event.deployer;
+      } else {
         this.stats.set(event.mint, {
           mint: event.mint,
+          deployer: event.deployer,
           launchedAt: event.launchedAt,
           uniqueBuyers: new Set(),
           marketCapSol: 0,
+          latestPriceSol: undefined,
         });
       }
       return;
@@ -32,9 +39,11 @@ export class MintStatsTracker {
     if (!entry) {
       entry = {
         mint: event.mint,
+        deployer: undefined,
         launchedAt: event.occurredAt,
         uniqueBuyers: new Set(),
         marketCapSol: 0,
+        latestPriceSol: undefined,
       };
       this.stats.set(event.mint, entry);
     }
@@ -45,6 +54,7 @@ export class MintStatsTracker {
     if (event.marketCapSol !== undefined) {
       entry.marketCapSol = event.marketCapSol;
     }
+    entry.latestPriceSol = event.priceSol;
   }
 
   get(mint: string): MintStats | undefined {

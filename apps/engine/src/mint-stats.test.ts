@@ -43,7 +43,14 @@ describe("MintStatsTracker", () => {
   it("initializes stats on TokenLaunched", () => {
     const tracker = new MintStatsTracker();
     tracker.onEvent(tokenLaunched());
-    expect(tracker.get(mint)).toMatchObject({ mint, launchedAt, marketCapSol: 0 });
+    expect(tracker.get(mint)).toMatchObject({ mint, deployer, launchedAt, marketCapSol: 0 });
+  });
+
+  it("tracks the latest trade price for a mint", () => {
+    const tracker = new MintStatsTracker();
+    tracker.onEvent(tokenLaunched());
+    tracker.onEvent(trade(buyerA, 10, launchedAt));
+    expect(tracker.get(mint)?.latestPriceSol).toBe(0.0001);
   });
 
   it("tracks unique buyers across trades", () => {
