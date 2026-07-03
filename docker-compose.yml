@@ -1,21 +1,4 @@
 services:
-  postgres:
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: memebot
-      POSTGRES_PASSWORD: memebot
-      POSTGRES_DB: memebot
-    ports:
-      - "5432:5432"
-    volumes:
-      - memebot_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U memebot -d memebot"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   redis:
     image: redis:7
     restart: unless-stopped
@@ -30,5 +13,4 @@ services:
       retries: 10
 
 volumes:
-  memebot_postgres_data:
   memebot_redis_data:

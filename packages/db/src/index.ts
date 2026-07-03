@@ -1,7 +1,6 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { MongoClient, type Db } from "mongodb";
 
-export function createDbClient(connectionString: string) {
-  const client = postgres(connectionString);
-  return drizzle(client);
+export function createDbClient(connectionString: string): { client: MongoClient; db: Db } {
+  const client = new MongoClient(connectionString);
+  return { client, db: client.db() };
 }

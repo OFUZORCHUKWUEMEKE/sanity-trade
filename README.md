@@ -8,25 +8,26 @@ See `CLAUDE.md` for architecture, phases, and risk rules.
 ## Layout
 
 ```
-apps/ingest    PumpPortal WebSocket consumer -> normalized events -> Postgres + Redis stream
+apps/ingest    PumpPortal WebSocket consumer -> normalized events -> MongoDB + Redis stream
 apps/engine    Filter pipeline, paper trader, exit manager
 apps/notifier  Telegram alerts
 packages/core  Shared types, event schemas, scoring functions
-packages/db    Drizzle ORM + Postgres schema, migrations
+packages/db    MongoDB client, collections, migrations
 ```
 
 ## Prerequisites
 
 - Node.js 22+
 - pnpm 10+
-- Docker + Docker Compose
+- Docker + Docker Compose (for local Redis)
+- A MongoDB connection string (e.g. MongoDB Atlas)
 
 ## Setup
 
 ```bash
-cp .env.example .env
+cp .env.example .env   # then set MONGODB_URI to your connection string
 pnpm install
-docker compose up -d
+docker compose up -d   # starts Redis
 ```
 
 ## Run a service
