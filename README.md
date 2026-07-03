@@ -30,6 +30,12 @@ pnpm install
 docker compose up -d   # starts Redis
 ```
 
+To enable Telegram alerts and commands (`/status`, `/positions`, `/pause`,
+`/resume`, `/kill`), create a bot with [@BotFather](https://t.me/BotFather) and
+set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `.env`. Without them,
+`apps/notifier` logs a warning and stays idle - it neither sends alerts nor
+polls for commands.
+
 ## Run a service
 
 ```bash
