@@ -37,4 +37,8 @@ export async function ensureIndexes(db: Db): Promise<void> {
       { key: { address: 1 }, name: "address_1", unique: true },
       { key: { active: 1 }, name: "active_1" },
     ]);
+
+  await db
+    .collection(COLLECTIONS.openPositions)
+    .createIndexes([{ key: { mint: 1 }, name: "mint_1", unique: true }]);
 }

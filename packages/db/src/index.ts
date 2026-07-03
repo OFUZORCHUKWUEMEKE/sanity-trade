@@ -2,6 +2,8 @@ import { MongoClient, type Collection, type Db } from "mongodb";
 import { COLLECTIONS } from "./collections.js";
 import type {
   DeployerDoc,
+  EngineControlDoc,
+  OpenPositionDoc,
   PaperTradeDoc,
   RawEventDoc,
   TokenDoc,
@@ -40,4 +42,12 @@ export function paperTradesCollection(db: Db): Collection<PaperTradeDoc> {
 
 export function watchedWalletsCollection(db: Db): Collection<WatchedWalletDoc> {
   return db.collection<WatchedWalletDoc>(COLLECTIONS.watchedWallets);
+}
+
+export function openPositionsCollection(db: Db): Collection<OpenPositionDoc> {
+  return db.collection<OpenPositionDoc>(COLLECTIONS.openPositions);
+}
+
+export function engineControlCollection(db: Db): Collection<EngineControlDoc> {
+  return db.collection<EngineControlDoc>(COLLECTIONS.engineControl);
 }

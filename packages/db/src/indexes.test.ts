@@ -32,11 +32,22 @@ describe("ensureIndexes", () => {
     ]);
   });
 
-  it("touches every collection defined in COLLECTIONS", async () => {
+  it("creates a unique mint index on open_positions", async () => {
+    const { db, collection, createIndexes } = fakeDb();
+    await ensureIndexes(db);
+
+    expect(collection).toHaveBeenCalledWith(COLLECTIONS.openPositions);
+    expect(createIndexes).toHaveBeenCalledWith([
+      { key: { mint: 1 }, name: "mint_1", unique: true },
+    ]);
+  });
+
+  it("touches every collection with an explicit index, except the _id-only engine_control singleton", async () => {
     const { db, collection } = fakeDb();
     await ensureIndexes(db);
 
     for (const name of Object.values(COLLECTIONS)) {
+      if (name === COLLECTIONS.engineControl) continue;
       expect(collection).toHaveBeenCalledWith(name);
     }
   });
