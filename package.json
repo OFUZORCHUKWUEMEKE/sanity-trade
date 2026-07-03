@@ -1,0 +1,23 @@
+{
+  "name": "memebot",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "build": "pnpm -r --if-present run build",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "test": "pnpm -r --if-present run test",
+    "lint": "pnpm -r --if-present run lint",
+    "dev:ingest": "pnpm --filter @memebot/ingest run dev",
+    "dev:engine": "pnpm --filter @memebot/engine run dev",
+    "dev:notifier": "pnpm --filter @memebot/notifier run dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8",
+    "@types/node": "^22.10.5"
+  }
+}
