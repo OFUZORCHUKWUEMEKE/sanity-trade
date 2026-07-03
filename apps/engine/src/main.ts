@@ -4,6 +4,7 @@ import { Redis } from "ioredis";
 import { loadConfig } from "./config.js";
 import { createLogger } from "./logger.js";
 import { createHealthServer } from "./server.js";
+import { ControlStateCache } from "./control-state.js";
 import { incrementDeployerTokenCount } from "./deployer-repo.js";
 import { MintStatsTracker } from "./mint-stats.js";
 import { PaperTrader } from "./paper-trader.js";
@@ -35,10 +36,13 @@ const scorerDeps = {
 
 // PAPER_MODE gates the trader: Phase 1 has no real execution path at all,
 // so if it's ever set to false there's simply nothing to run yet.
+const controlState = new ControlStateCache(db, config.CONTROL_STATE_TTL_MS, logger);
+
 const paperTrader = config.PAPER_MODE
   ? new PaperTrader({
       db,
       logger,
+      controlState,
       positionSizeSol: config.POSITION_SIZE_SOL,
       maxConcurrent: config.MAX_CONCURRENT_POSITIONS,
       entryScoreThreshold: config.ENTRY_SCORE_THRESHOLD,
@@ -58,9 +62,9 @@ if (!paperTrader) {
 
 function runScoring(mint: string, deployer: string): void {
   scoreToken(scorerDeps, mint, deployer)
-    .then((result) => {
+    .then(async (result) => {
       const stats = mintStats.get(mint);
-      paperTrader?.tryEnter(
+      await paperTrader?.tryEnter(
         mint,
         deployer,
         result.total,

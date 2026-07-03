@@ -1,7 +1,8 @@
 import { simulateFill, type NormalizedEvent } from "@memebot/core";
-import { paperTradesCollection, type Db } from "@memebot/db";
+import { openPositionsCollection, paperTradesCollection, type Db } from "@memebot/db";
 import type { Logger } from "pino";
-import { PositionManager, type ExitEvent } from "./position-manager.js";
+import type { ControlState } from "./control-state.js";
+import { PositionManager, type ExitEvent, type OpenPosition } from "./position-manager.js";
 
 interface EntryFill {
   feeSol: number;
@@ -18,6 +19,7 @@ interface RugState {
 export interface PaperTraderOptions {
   db: Db;
   logger: Logger;
+  controlState: ControlState;
   positionSizeSol: number;
   maxConcurrent: number;
   entryScoreThreshold: number;
@@ -51,7 +53,7 @@ export class PaperTrader {
     });
   }
 
-  tryEnter(
+  async tryEnter(
     mint: string,
     deployer: string,
     total: number,
@@ -59,10 +61,14 @@ export class PaperTrader {
     priceSol: number | undefined,
     marketCapSol: number | undefined,
     now: Date = new Date(),
-  ): void {
+  ): Promise<void> {
     if (hardRejected || total < this.opts.entryScoreThreshold) return;
     if (!priceSol || priceSol <= 0) return;
     if (!this.positionManager.canEnter(mint)) return;
+    if (await this.opts.controlState.isHalted()) {
+      this.opts.logger.info({ mint }, "skipping entry: engine is paused or killed");
+      return;
+    }
 
     const fill = simulateFill({
       side: "buy",
@@ -90,6 +96,10 @@ export class PaperTrader {
       netCostSol: fill.netSol,
     });
     this.rugState.set(mint, { devWalletSold: false, peakMarketCapSol: marketCapSol ?? 0 });
+
+    await this.upsertOpenPositionDoc(position).catch((err: unknown) => {
+      this.opts.logger.error({ err, mint }, "failed to persist open position");
+    });
 
     this.opts.logger.info({ mint, priceSol, total }, "paper trade entered");
   }
@@ -129,7 +139,42 @@ export class PaperTrader {
     if (exitEvent.positionClosed) {
       this.entryFills.delete(event.mint);
       this.rugState.delete(event.mint);
+      this.deleteOpenPositionDoc(event.mint).catch((err: unknown) => {
+        this.opts.logger.error({ err, mint: event.mint }, "failed to delete open position doc");
+      });
+    } else {
+      const remaining = this.positionManager.get(event.mint);
+      if (remaining) {
+        this.upsertOpenPositionDoc(remaining).catch((err: unknown) => {
+          this.opts.logger.error({ err, mint: event.mint }, "failed to update open position doc");
+        });
+      }
     }
+  }
+
+  private async upsertOpenPositionDoc(position: OpenPosition): Promise<void> {
+    await openPositionsCollection(this.opts.db).updateOne(
+      { mint: position.mint },
+      {
+        $set: {
+          mint: position.mint,
+          deployer: position.deployer,
+          entryAt: position.entryAt,
+          entryPrice: position.entryPrice,
+          originalSizeSol: position.originalSizeSol,
+          remainingSizeSol: position.remainingSizeSol,
+          peakPriceSol: position.peakPriceSol,
+          tookInitialTakeProfit: position.tookInitialTakeProfit,
+          entryReason: position.entryReason,
+          updatedAt: new Date(),
+        },
+      },
+      { upsert: true },
+    );
+  }
+
+  private async deleteOpenPositionDoc(mint: string): Promise<void> {
+    await openPositionsCollection(this.opts.db).deleteOne({ mint });
   }
 
   private async recordExit(mint: string, exitEvent: ExitEvent): Promise<void> {

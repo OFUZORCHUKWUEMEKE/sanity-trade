@@ -29,6 +29,7 @@ const envSchema = z.object({
   PLATFORM_FEE_BPS: z.coerce.number().int().nonnegative().default(125),
   SLIPPAGE_BPS: z.coerce.number().int().nonnegative().default(100),
   PRIORITY_FEE_SOL: z.coerce.number().nonnegative().default(0.0005),
+  CONTROL_STATE_TTL_MS: z.coerce.number().int().nonnegative().default(5_000),
 });
 
 export type Config = z.infer<typeof envSchema>;
