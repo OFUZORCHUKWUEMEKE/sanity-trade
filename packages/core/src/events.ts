@@ -48,6 +48,7 @@ export const smartMoneyTradeSchema = z.object({
   solAmount: z.number().positive(),
   tokenAmount: z.number().positive(),
   priceSol: z.number().positive(),
+  marketCapSol: z.number().nonnegative().optional(),
   signature: solanaSignature,
   source: eventSourceSchema,
   occurredAt: z.coerce.date(),

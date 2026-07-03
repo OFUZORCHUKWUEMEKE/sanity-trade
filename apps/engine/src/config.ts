@@ -10,6 +10,12 @@ const envSchema = z.object({
     .string()
     .default("true")
     .transform((v) => v !== "false"),
+  REDIS_EVENTS_STREAM: z.string().min(1).default("memebot:events"),
+  SOLANA_RPC_URL: z.string().url().default("https://api.mainnet-beta.solana.com"),
+  RUGCHECK_BASE_URL: z.string().url().default("https://api.rugcheck.xyz/v1"),
+  RATE_LIMIT_DELAY_MS: z.coerce.number().int().nonnegative().default(250),
+  SCORE_T60_MS: z.coerce.number().int().positive().default(60_000),
+  SCORE_T5MIN_MS: z.coerce.number().int().positive().default(300_000),
 });
 
 export type Config = z.infer<typeof envSchema>;

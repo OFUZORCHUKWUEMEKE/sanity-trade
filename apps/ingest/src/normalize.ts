@@ -45,6 +45,7 @@ export function normalizeSmartMoneyTrade(
     solAmount: raw.solAmount,
     tokenAmount: raw.tokenAmount,
     priceSol: raw.solAmount / raw.tokenAmount,
+    marketCapSol: raw.marketCapSol,
     signature: raw.signature,
     source: mapPoolToSource(raw.pool),
     occurredAt: receivedAt,
